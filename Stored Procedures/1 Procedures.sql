@@ -1,3 +1,33 @@
+-- Procedures
+-- Procedure 1 --------------------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE remove_objects (
+    name_of_object VARCHAR2,
+    type_of_object VARCHAR2
+) IS
+    cnt NUMBER := 0;
+BEGIN
+    IF upper(type_of_object) = 'TABLE' THEN
+        SELECT COUNT(*) INTO cnt FROM user_tables WHERE upper(table_name) = upper(TRIM(name_of_object));
+        IF cnt > 0 THEN
+            EXECUTE IMMEDIATE 'drop table ' || name_of_object || ' cascade constraints';
+        END IF;
+    END IF;
+    
+    IF upper(type_of_object) = 'VIEW' THEN
+        SELECT COUNT(*) INTO cnt FROM user_views WHERE upper(view_name) = upper(TRIM(name_of_object));
+        IF cnt > 0 THEN
+            EXECUTE IMMEDIATE 'drop view ' || name_of_object || ' cascade constraints';
+        END IF;
+    END IF;
+
+    if upper(type_of_object) = 'USER' then
+        select count(*) into cnt from all_users where username = upper(name_of_object);
+    if cnt > 0 then          
+        execute immediate 'DROP USER '||name_of_object;        
+    end if; 
+END;
+
+-- Procedure 2 --------------------------------------------------------------------------------------------
 create or replace PROCEDURE CREATE_ALL_TABLES AS 
 BEGIN
     begin
@@ -8,7 +38,7 @@ BEGIN
                 raise;
             end if;
     end;
-    
+
     begin
       execute immediate 'drop table rental_complaint';
     exception
@@ -17,7 +47,7 @@ BEGIN
                 raise;
             end if;
     end;
-    
+
     begin
       execute immediate 'drop table customer_card_details';
     exception
@@ -26,7 +56,7 @@ BEGIN
                 raise;
             end if;
     end;
-    
+
     begin
       execute immediate 'drop table rental_booking_backlog';
     exception
@@ -35,7 +65,7 @@ BEGIN
                 raise;
             end if;
     end;
-    
+
     begin
       execute immediate 'drop table rental_posting';
     exception
@@ -44,7 +74,7 @@ BEGIN
                 raise;
             end if;
     end;
-    
+
     begin
       execute immediate 'drop table owner';
     exception
@@ -53,7 +83,7 @@ BEGIN
                 raise;
             end if;
     end;
-    
+
     begin
       execute immediate 'drop table customer';
     exception
@@ -62,7 +92,8 @@ BEGIN
                 raise;
             end if;
     end;
-    
+    dbms_output.put_line('All tables (if existing) dropped successfully.');
+
     begin
         execute immediate 'create table customer (
             c_id number(10) primary key,
@@ -77,7 +108,8 @@ BEGIN
             c_zipcode varchar2(5) not null,
             c_creationdate date default SYSDATE
         )';
-        
+        dbms_output.put_line('Customer table created.');
+
         execute immediate 'create table owner (
             o_id number(10)	primary key,
             o_firstname varchar2(20) not null,
@@ -91,6 +123,7 @@ BEGIN
             o_zipcode varchar2(5) not null,
             o_creationdate date default SYSDATE
         )';
+        dbms_output.put_line('Owner table created.');
         
         execute immediate 'create table rental_posting (
             r_id number(10)	primary key,
@@ -110,7 +143,8 @@ BEGIN
             r_photo varchar2(100),
             foreign key (o_id) references owner(o_id) on delete cascade
         )';
-        
+        dbms_output.put_line('Rental_Posting table created.');
+
         execute immediate 'create table rental_booking_backlog(
             b_id number(10)	primary key,
             r_id number(10),
@@ -121,7 +155,8 @@ BEGIN
             foreign key (r_id) references rental_posting(r_id) on delete cascade,
             foreign key (c_id) references customer(c_id) on delete cascade
         )';
-        
+        dbms_output.put_line('Rental Booking Backlog table created.');
+
         execute immediate 'create table customer_card_details(
             card_number number(16) primary key,
             c_id number(10),
@@ -131,7 +166,8 @@ BEGIN
             card_cvv number(3) not null,
             foreign key (c_id) references customer(c_id) on delete cascade
         )';
-        
+        dbms_output.put_line('Customer Card Details table created.');
+
         execute immediate 'create table rental_complaint(
             complaint_id number(10)	primary key,
             r_id number(10),
@@ -143,6 +179,7 @@ BEGIN
             foreign key (r_id) references rental_posting(r_id) on delete cascade,
             foreign key (c_id) references customer(c_id) on delete cascade
         )';
+        dbms_output.put_line('Rental Complaint table created.');
         
         execute immediate 'create table rental_feedback(
             feedback_id number(10) primary key,
@@ -154,6 +191,7 @@ BEGIN
             foreign key (b_id) references rental_booking_backlog(b_id) on delete cascade,
             foreign key (c_id) references customer(c_id) on delete cascade
         )';
+        dbms_output.put_line('Rental Feedback table created.');
         
         --customer table
         execute immediate 'INSERT INTO CUSTOMER (c_id,c_firstname,c_lastname,c_email,c_contact,c_username,c_password,c_city,c_state,c_zipcode) VALUES(1,''Mark'',''Cuban'',''cuban@gmail.com'',''8769876547'',''cubanRocks'',''Cuban@9876'',''Boston'',''Massachusettes'',''02115'')';
@@ -176,6 +214,7 @@ BEGIN
         execute immediate 'INSERT INTO CUSTOMER (c_id,c_firstname,c_lastname,c_email,c_contact,c_username,c_password,c_city,c_state,c_zipcode) VALUES(18,''Kylynn'',''Moon'',''Kylynn@gmail.com'',''8815685137'',''KylynRocks'',''Kylynn@9876'',''Seattle'', ''Washington'', ''98104'')';
         execute immediate 'INSERT INTO CUSTOMER (c_id,c_firstname,c_lastname,c_email,c_contact,c_username,c_password,c_city,c_state,c_zipcode) VALUES(19,''Amy'',''Douglas'',''Amy@gmail.com'',''3666225937'',''AmyRocks'',''Amy@9876'',''Fullerton'', ''California'', ''92640'')';
         execute immediate 'INSERT INTO CUSTOMER (c_id,c_firstname,c_lastname,c_email,c_contact,c_username,c_password,c_city,c_state,c_zipcode) VALUES(20,''Denton'',''King'',''Denton@gmail.com'',''4362335560'',''DentoRocks'',''Denton@9876'',''Arlington'', ''Texas'', ''76004'')';
+        dbms_output.put_line('Customer table populated.');
         
         --owner table
         execute immediate 'INSERT INTO OWNER (O_id,O_firstname,O_lastname,O_email,O_contact,O_username,O_password,O_city,O_state,O_zipcode) VALUES(1,''Shayne'',''Gheorghescu'',''Shayne@gmail.com'',''6141541313'',''ShaynRocks'',''Shayne@9876'',''Boston'',''Massachusettes'',''02115'')';
@@ -198,6 +237,7 @@ BEGIN
         execute immediate 'INSERT INTO OWNER (O_id,O_firstname,O_lastname,O_email,O_contact,O_username,O_password,O_city,O_state,O_zipcode) VALUES(18,''Ellery'', ''Wixey'',''Eller@gmail.com'',''8817691512'',''EllerRocks'',''Ellery@9876'',''Seattle'',''Washington'',''98104'')';
         execute immediate 'INSERT INTO OWNER (O_id,O_firstname,O_lastname,O_email,O_contact,O_username,O_password,O_city,O_state,O_zipcode) VALUES(19,''Corrina'', ''Barnhart'',''Corri@gmail.com'',''3563128570'',''CorriRocks'',''Corrina@9876'',''Wichita'',''Kansas'',''67210'')';
         execute immediate 'INSERT INTO OWNER (O_id,O_firstname,O_lastname,O_email,O_contact,O_username,O_password,O_city,O_state,O_zipcode) VALUES(20,''Bellanca'', ''Degnen'',''Bella@gmail.com'',''8426890374'',''BellaRocks'',''Bellanca@9876'',''Saint Paul'',''California'',''44787'')';
+        dbms_output.put_line('Owner table populated.');
         
         --rental posting table
         execute immediate 'INSERT INTO rental_posting (R_ID,O_ID,R_TYPE,R_RATEPERHOUR,R_STREET,R_CITY,R_STATE,R_ZIPCODE,R_CREATIONDATE,R_SPOTORSPACE,R_TOTALSEATSPACE,R_UTILITYWIFI,R_UTILITYCAFETERIA,R_DESCRIPTION,R_PHOTO) VALUES(1,''1'',''Studio'',''50'',''9610 Amet, St.'',''Boston'',''Massachusettes'',''02115'',SYSDATE,''1'',''20'',''1'',''1'',''Affordable studio space for those looking to escape the isolation of a home office or coffee shop'',''IMAGE URL'')';
@@ -220,7 +260,8 @@ BEGIN
         execute immediate 'INSERT INTO rental_posting (R_ID,O_ID,R_TYPE,R_RATEPERHOUR,R_STREET,R_CITY,R_STATE,R_ZIPCODE,R_CREATIONDATE,R_SPOTORSPACE,R_TOTALSEATSPACE,R_UTILITYWIFI,R_UTILITYCAFETERIA,R_DESCRIPTION,R_PHOTO) VALUES(18,''18'',''Cafe'',''90'',''Ipsum. Street'',''Seattle'',''Washington'',''98104'',SYSDATE,''1'',''5'',''1'',''0'',''Affordable cafe space for those looking to escape the isolation of a home office or coffee shop'',''IMAGE URL'')';
         execute immediate 'INSERT INTO rental_posting (R_ID,O_ID,R_TYPE,R_RATEPERHOUR,R_STREET,R_CITY,R_STATE,R_ZIPCODE,R_CREATIONDATE,R_SPOTORSPACE,R_TOTALSEATSPACE,R_UTILITYWIFI,R_UTILITYCAFETERIA,R_DESCRIPTION,R_PHOTO) VALUES(19,''19'',''Office'',''110'',''Quis, Rd.'',''Wichita'',''Kansas'',''67210'',SYSDATE,''1'',''5'',''1'',''0'',''Spacious office space for those looking to escape the isolation of a home office or coffee shop'',''IMAGE URL'')';
         execute immediate 'INSERT INTO rental_posting (R_ID,O_ID,R_TYPE,R_RATEPERHOUR,R_STREET,R_CITY,R_STATE,R_ZIPCODE,R_CREATIONDATE,R_SPOTORSPACE,R_TOTALSEATSPACE,R_UTILITYWIFI,R_UTILITYCAFETERIA,R_DESCRIPTION,R_PHOTO) VALUES(20,''20'',''Cafe'',''80'',''Velit Road'',''Saint Paul'',''California'',''44787'',SYSDATE,''0'',''1'',''1'',''1'',''Cool cafe space for those looking to escape the isolation of a home office or coffee shop'',''IMAGE URL'')';
-    
+        dbms_output.put_line('Rental Posting table populated.');
+        
         --rental booking backlog table
         execute immediate 'INSERT INTO RENTAL_BOOKING_BACKLOG(B_ID,R_ID,C_ID,B_STARTDATE,B_ENDDATE,B_ACTIVE) VALUES(1, ''1'',''1'',''17-APR-22'',''17-APR-22'',''1'')';
         execute immediate 'INSERT INTO RENTAL_BOOKING_BACKLOG(B_ID,R_ID,C_ID,B_STARTDATE,B_ENDDATE,B_ACTIVE) VALUES(2, ''2'',''1'',''18-APR-22'',''18-APR-22'',''0'')';
@@ -247,6 +288,7 @@ BEGIN
         execute immediate 'INSERT INTO RENTAL_BOOKING_BACKLOG(B_ID,R_ID,C_ID,B_STARTDATE,B_ENDDATE,B_ACTIVE) VALUES(23, ''6'',''18'',''17-APR-22'',''17-APR-22'',''0'')';
         execute immediate 'INSERT INTO RENTAL_BOOKING_BACKLOG(B_ID,R_ID,C_ID,B_STARTDATE,B_ENDDATE,B_ACTIVE) VALUES(24, ''11'',''13'',''20-APR-22'',''20-APR-22'',''0'')';
         execute immediate 'INSERT INTO RENTAL_BOOKING_BACKLOG(B_ID,R_ID,C_ID,B_STARTDATE,B_ENDDATE,B_ACTIVE) VALUES(25, ''13'',''20'',''20-APR-22'',''20-APR-22'',''0'')';
+        dbms_output.put_line('Rental Booking Backlog table populated.');
         
         --credit card table
         execute immediate 'INSERT INTO CUSTOMER_CARD_DETAILS (CARD_NUMBER, C_ID,CARD_NAME, CARD_TYPE, CARD_EXPIRYDATE, CARD_CVV) VALUES(''2221239531707878'',1,''Mark Cuban'',''Visa'',''03/23'',''878'')';
@@ -269,18 +311,20 @@ BEGIN
         execute immediate 'INSERT INTO CUSTOMER_CARD_DETAILS (CARD_NUMBER, C_ID,CARD_NAME, CARD_TYPE, CARD_EXPIRYDATE, CARD_CVV) VALUES(''4556268706189670'',18,''Kylynn Moon'',''Visa'',''11/26'',''323'')';
         execute immediate 'INSERT INTO CUSTOMER_CARD_DETAILS (CARD_NUMBER, C_ID,CARD_NAME, CARD_TYPE, CARD_EXPIRYDATE, CARD_CVV) VALUES(''2621020057520747'',19,''Amy Douglas'',''JCB'',''03/23'',''233'')';
         execute immediate 'INSERT INTO CUSTOMER_CARD_DETAILS (CARD_NUMBER, C_ID,CARD_NAME, CARD_TYPE, CARD_EXPIRYDATE, CARD_CVV) VALUES(''6726514083687038'',20,''Denton King'',''Visa'',''01/23'',''143'')';
+        dbms_output.put_line('Customer Card Details table populated.');
         
         --rental feedback table
-        execute immediate 'INSERT INTO RENTAL_FEEDBACK(FEEDBACK_ID,B_ID,C_ID,FEEDBACK_DATE,FEEDBACK_REVIEW,FEEDBACK_RATING) VALUES(1, ''1'',''1'',''18-APR-22'',''Very comfortable workplace with great ambience and pleasant work culture'',''1'')';
-        execute immediate 'INSERT INTO RENTAL_FEEDBACK(FEEDBACK_ID,B_ID,C_ID,FEEDBACK_DATE,FEEDBACK_REVIEW,FEEDBACK_RATING) VALUES(2, ''6'',''6'',''19-APR-22'',''Highly recommend this place to budding entrepreneurs and people looking for a comfortable place to work.'',''1'')';
-        execute immediate 'INSERT INTO RENTAL_FEEDBACK(FEEDBACK_ID,B_ID,C_ID,FEEDBACK_DATE,FEEDBACK_REVIEW,FEEDBACK_RATING) VALUES(3, ''9'',''7'',''18-APR-22'',''Using it, loved it. Perfect place for entrepreneurs'',''1'')';
-        execute immediate 'INSERT INTO RENTAL_FEEDBACK(FEEDBACK_ID,B_ID,C_ID,FEEDBACK_DATE,FEEDBACK_REVIEW,FEEDBACK_RATING) VALUES(4, ''22'',''16'',''18-APR-22'',''Co- Working space. Great environment. Great place for team members'',''1'')';
-        execute immediate 'INSERT INTO RENTAL_FEEDBACK(FEEDBACK_ID,B_ID,C_ID,FEEDBACK_DATE,FEEDBACK_REVIEW,FEEDBACK_RATING) VALUES(5, ''20'',''12'',''21-APR-22'',''Wifi network is not good to work with'',''0'')';
-        execute immediate 'INSERT INTO RENTAL_FEEDBACK(FEEDBACK_ID,B_ID,C_ID,FEEDBACK_DATE,FEEDBACK_REVIEW,FEEDBACK_RATING) VALUES(6, ''15'',''19'',''18-APR-22'',''Very noisy due to construction on the roadside'',''0'')';
-        execute immediate 'INSERT INTO RENTAL_FEEDBACK(FEEDBACK_ID,B_ID,C_ID,FEEDBACK_DATE,FEEDBACK_REVIEW,FEEDBACK_RATING) VALUES(7, ''21'',''17'',''18-APR-22'',''overall positive experience'',''1'')';
-        execute immediate 'INSERT INTO RENTAL_FEEDBACK(FEEDBACK_ID,B_ID,C_ID,FEEDBACK_DATE,FEEDBACK_REVIEW,FEEDBACK_RATING) VALUES(8, ''13'',''3'',''22-APR-22'',''Take your own coffe to work'',''0'')';
-        execute immediate 'INSERT INTO RENTAL_FEEDBACK(FEEDBACK_ID,B_ID,C_ID,FEEDBACK_DATE,FEEDBACK_REVIEW,FEEDBACK_RATING) VALUES(9, ''3'',''2'',''18-APR-22'',''overall positive experience'',''1'')';
-        execute immediate 'INSERT INTO RENTAL_FEEDBACK(FEEDBACK_ID,B_ID,C_ID,FEEDBACK_DATE,FEEDBACK_REVIEW,FEEDBACK_RATING) VALUES(10, ''14'',''14'',''18-APR-22'',''Ambience is not productive'',''0'')';
+        execute immediate 'INSERT INTO RENTAL_FEEDBACK(FEEDBACK_ID,B_ID,C_ID,FEEDBACK_DATE,FEEDBACK_REVIEW,FEEDBACK_RATING) VALUES(1, ''1'',''1'',''18-APR-22'',''Very comfortable workplace with great ambience and pleasant work culture'',5)';
+        execute immediate 'INSERT INTO RENTAL_FEEDBACK(FEEDBACK_ID,B_ID,C_ID,FEEDBACK_DATE,FEEDBACK_REVIEW,FEEDBACK_RATING) VALUES(2, ''6'',''6'',''19-APR-22'',''Highly recommend this place to budding entrepreneurs and people looking for a comfortable place to work.'',4)';
+        execute immediate 'INSERT INTO RENTAL_FEEDBACK(FEEDBACK_ID,B_ID,C_ID,FEEDBACK_DATE,FEEDBACK_REVIEW,FEEDBACK_RATING) VALUES(3, ''9'',''7'',''18-APR-22'',''Using it, loved it. Perfect place for entrepreneurs'',4)';
+        execute immediate 'INSERT INTO RENTAL_FEEDBACK(FEEDBACK_ID,B_ID,C_ID,FEEDBACK_DATE,FEEDBACK_REVIEW,FEEDBACK_RATING) VALUES(4, ''22'',''16'',''18-APR-22'',''Co- Working space. Great environment. Great place for team members'',3)';
+        execute immediate 'INSERT INTO RENTAL_FEEDBACK(FEEDBACK_ID,B_ID,C_ID,FEEDBACK_DATE,FEEDBACK_REVIEW,FEEDBACK_RATING) VALUES(5, ''20'',''12'',''21-APR-22'',''Wifi network is not good to work with'',2)';
+        execute immediate 'INSERT INTO RENTAL_FEEDBACK(FEEDBACK_ID,B_ID,C_ID,FEEDBACK_DATE,FEEDBACK_REVIEW,FEEDBACK_RATING) VALUES(6, ''15'',''19'',''18-APR-22'',''Very noisy due to construction on the roadside'',5)';
+        execute immediate 'INSERT INTO RENTAL_FEEDBACK(FEEDBACK_ID,B_ID,C_ID,FEEDBACK_DATE,FEEDBACK_REVIEW,FEEDBACK_RATING) VALUES(7, ''21'',''17'',''18-APR-22'',''overall positive experience'',4)';
+        execute immediate 'INSERT INTO RENTAL_FEEDBACK(FEEDBACK_ID,B_ID,C_ID,FEEDBACK_DATE,FEEDBACK_REVIEW,FEEDBACK_RATING) VALUES(8, ''13'',''3'',''22-APR-22'',''Take your own coffe to work'',3)';
+        execute immediate 'INSERT INTO RENTAL_FEEDBACK(FEEDBACK_ID,B_ID,C_ID,FEEDBACK_DATE,FEEDBACK_REVIEW,FEEDBACK_RATING) VALUES(9, ''3'',''2'',''18-APR-22'',''overall positive experience'',2)';
+        execute immediate 'INSERT INTO RENTAL_FEEDBACK(FEEDBACK_ID,B_ID,C_ID,FEEDBACK_DATE,FEEDBACK_REVIEW,FEEDBACK_RATING) VALUES(10, ''14'',''14'',''18-APR-22'',''Ambience is not productive'',4)';
+        dbms_output.put_line('Rental Feedback table populated.');
         
         --rental complaint table
         execute immediate 'INSERT INTO RENTAL_COMPLAINT(COMPLAINT_ID,R_ID,C_ID,COMPLAINT_DATE,COMPLAINT_STATUS,COMPLAINT_DESCRIPTION,COMPLAINT_SEVERITY) VALUES(1, ''1'',''1'',''19-APR-22'',''CREATED'',''WIFI WAS NOT WORKING PORPERLY'',''MEDIUM'')';
@@ -293,6 +337,640 @@ BEGIN
         execute immediate 'INSERT INTO RENTAL_COMPLAINT(COMPLAINT_ID,R_ID,C_ID,COMPLAINT_DATE,COMPLAINT_STATUS,COMPLAINT_DESCRIPTION,COMPLAINT_SEVERITY) VALUES(8, ''13'',''12'',''22-APR-22'',''ACKNOWLEDGED BY OWNER'',''CHAIRS ARE BROKEN'',''MEDIUM'')';
         execute immediate 'INSERT INTO RENTAL_COMPLAINT(COMPLAINT_ID,R_ID,C_ID,COMPLAINT_DATE,COMPLAINT_STATUS,COMPLAINT_DESCRIPTION,COMPLAINT_SEVERITY) VALUES(9, ''10'',''19'',''20-APR-22'',''RESOLVED'',''FIX AIR CONDITIONER'',''HIGH'')';
         execute immediate 'INSERT INTO RENTAL_COMPLAINT(COMPLAINT_ID,R_ID,C_ID,COMPLAINT_DATE,COMPLAINT_STATUS,COMPLAINT_DESCRIPTION,COMPLAINT_SEVERITY) VALUES(10, ''14'',''17'',''19-APR-22'',''RESOLVED'',''REPLACE WATER COOLER'',''MEDIUM'')';
+        dbms_output.put_line('Rental Complaint table populated.');
         
     end;
 END CREATE_ALL_TABLES;
+
+-- Procedure 3 --------------------------------------------------------------------------------------------
+
+create or replace PROCEDURE DELETE_CUSTOMER_CARD_DETAILS 
+(
+  CID VARCHAR2 
+) AS
+BEGIN
+    DECLARE
+        cid_e exception;
+        cid_flag numeric;
+    BEGIN
+        select count(*) into cid_flag from customer_card_details where c_id = cid;
+        CASE
+            WHEN cid_flag is null then raise cid_e;
+            ELSE null;
+        END CASE;
+        delete from customer_card_details where c_id = cid;
+    EXCEPTION
+        WHEN cid_e THEN RAISE_APPLICATION_ERROR (-20013, 'Please enter valid customer id.');
+    END;
+END DELETE_CUSTOMER_CARD_DETAILS;
+
+-- Procedure 4 ---------------------------------------------------------------------------------------------
+
+create or replace PROCEDURE DELETE_RENTAL_BOOKING_BACKLOG (
+    BID numeric
+) AS 
+BEGIN
+    DECLARE
+        bid_e exception;
+        bid_flag numeric;
+    BEGIN
+        select count(*) into bid_flag from rental_booking_backlog where b_id = bid;
+        CASE
+            WHEN bid_flag is null then raise bid_e;
+            ELSE null;
+        END CASE;
+        update rental_booking_backlog set b_active = 0 where b_id = bid;
+    EXCEPTION
+        WHEN bid_e THEN RAISE_APPLICATION_ERROR (-20006, 'Please enter valid booking id.');
+    END;
+END DELETE_RENTAL_BOOKING_BACKLOG;
+
+-- Procedure 5 --------------------------------------------------------------------------------------------
+
+create or replace PROCEDURE DELETE_RENTAL_COMPLAINT 
+(
+  COMP_ID IN numeric 
+) AS 
+BEGIN
+  DECLARE
+        compid_e exception;
+        compid_flag numeric;
+    BEGIN
+        select count(*) into compid_flag from rental_complaint where complaint_id = comp_id;
+        CASE
+            WHEN compid_flag is null then raise compid_e;
+            ELSE null;
+        END CASE;
+        delete from rental_complaint where complaint_id = comp_id;
+    EXCEPTION
+        WHEN compid_e THEN RAISE_APPLICATION_ERROR (-20019, 'Please enter valid complaint id.');
+    END;
+END DELETE_RENTAL_COMPLAINT;
+
+-- Procedure 6 -------------------------------------------------------------------------------------------
+
+create or replace PROCEDURE DELETE_RENTAL_FEEDBACK 
+(
+  FB_ID IN NUMBER 
+) AS 
+BEGIN
+  DECLARE
+        fbid_e exception;
+        fbid_flag numeric;
+    BEGIN
+        select count(*) into fbid_flag from rental_feedback where feedback_id = fb_id;
+        CASE
+            WHEN fbid_flag is null then raise fbid_e;
+            ELSE null;
+        END CASE;
+        delete from rental_feedback where feedback_id = fb_id;
+    EXCEPTION
+        WHEN fbid_e THEN RAISE_APPLICATION_ERROR (-20024, 'Please enter valid feedback id.');
+    END;
+END DELETE_RENTAL_FEEDBACK;
+
+-- Procedure 7 --------------------------------------------------------------------------------------------
+
+CREATE OR REPLACE PROCEDURE DELETE_RENTAL_POSTING 
+(
+  RID IN NUMBER 
+) AS 
+BEGIN
+  DECLARE
+        rid_e exception;
+        rid_flag numeric;
+    BEGIN
+        select count(*) into rid_flag from rental_posting where r_id = rid;
+        CASE
+            WHEN rid_flag is null then raise rid_e;
+            ELSE null;
+        END CASE;
+        delete from rental_posting where r_id = rid;
+    EXCEPTION
+        WHEN rid_e THEN RAISE_APPLICATION_ERROR (-20024, 'Please enter valid rental id.');
+    END;
+END DELETE_RENTAL_POSTING;
+
+-- Procedure 8 --------------------------------------------------------------------------------------------
+
+create or replace PROCEDURE SIGN_UP_CUSTOMER 
+(
+  FIRST_NAME IN VARCHAR2 
+, LAST_NAME IN VARCHAR2 
+, EMAIL IN VARCHAR2 
+, CONTACT IN NUMBER 
+, USERNAME IN VARCHAR2 
+, PASSWRD IN VARCHAR2 
+, CITY IN VARCHAR2 
+, C_STATE IN VARCHAR2 
+, ZIP_CODE IN VARCHAR2 
+) AS 
+cust_id numeric;
+cur_date date;
+existing_email_flag numeric;
+existing_contact_flag numeric;
+existing_username_flag numeric;
+
+BEGIN
+    DECLARE
+        null_fname_e exception;
+        null_lname_e exception;
+        null_email_e exception;
+        existing_email_e exception;
+        invalid_email_e exception;
+        null_contact_e exception;
+        existing_contact_e exception;
+        null_username_e exception;
+        existing_username_e exception;
+        null_password_e exception;
+        null_city_e exception;
+        null_state_e exception;
+        null_zipcode_e exception;
+        invalid_zipcode_e exception;
+    BEGIN
+        select max(c_id)+1 into cust_id from customer;
+        select count(*) into existing_email_flag from customer where c_email=EMAIL;
+        select count(*) into existing_contact_flag from customer where c_contact=CONTACT;
+        select count(*) into existing_username_flag from customer where c_username=USERNAME;
+        
+        CASE
+            WHEN FIRST_NAME is null then raise null_fname_e;
+            WHEN LAST_NAME is null then raise null_lname_e;
+            WHEN EMAIL is null then raise null_email_e;
+            WHEN CONTACT is null then raise null_contact_e;
+            WHEN USERNAME is null then raise null_username_e;
+            WHEN PASSWRD is null then raise null_password_e;
+            WHEN CITY is null then raise null_city_e;
+            WHEN C_STATE is null then raise null_state_e;
+            WHEN ZIP_CODE is null then raise null_zipcode_e;
+            WHEN existing_email_flag!=0 then raise existing_email_e;
+            WHEN existing_contact_flag!=0 then raise existing_contact_e;
+            WHEN existing_username_flag!=0 then raise existing_username_e;
+            WHEN EMAIL not like ('%@%.%') then raise invalid_email_e;
+            WHEN length(ZIP_CODE)!=5 then raise invalid_zipcode_e;
+            WHEN not REGEXP_LIKE(ZIP_CODE, '^[[:digit:]]+$') then raise invalid_zipcode_e;
+            ELSE null;
+        END CASE;
+        
+        select sysdate into cur_date from dual;
+        insert into customer values(cust_id, first_name, last_name, email, contact, username, passwrd, city, c_state, zip_code, cur_date);
+        DBMS_OUTPUT.put_line('Customer added.');
+        
+        EXCEPTION 
+            WHEN null_fname_e 
+                THEN  
+                    RAISE_APPLICATION_ERROR (-20001, 
+                        'Null values and empty strings are not allowed for first name. Please re-enter.'); 
+         
+            WHEN null_lname_e 
+                THEN  
+                    RAISE_APPLICATION_ERROR (-20001, 
+                        'Null values and empty strings are not allowed for last name. Please re-enter.');  
+            
+            WHEN null_email_e 
+                THEN  
+                    RAISE_APPLICATION_ERROR (-20001, 
+                        'Null values and empty strings are not allowed for email. Please re-enter.'); 
+                        
+            WHEN null_contact_e 
+                THEN  
+                    RAISE_APPLICATION_ERROR (-20001, 
+                        'Null values and empty strings are not allowed for contact. Please re-enter.'); 
+                        
+            WHEN null_username_e 
+                THEN  
+                    RAISE_APPLICATION_ERROR (-20001, 
+                        'Null values and empty strings are not allowed for username. Please re-enter.'); 
+                        
+            WHEN null_password_e 
+                THEN  
+                    RAISE_APPLICATION_ERROR (-20001, 
+                        'Null values and empty strings are not allowed for password. Please re-enter.'); 
+                        
+            WHEN null_city_e 
+                THEN  
+                    RAISE_APPLICATION_ERROR (-20001, 
+                        'Null values and empty strings are not allowed for city. Please re-enter.'); 
+                        
+            WHEN null_state_e 
+                THEN  
+                    RAISE_APPLICATION_ERROR (-20001, 
+                        'Null values and empty strings are not allowed for state. Please re-enter.');
+                        
+            WHEN null_zipcode_e 
+                THEN  
+                    RAISE_APPLICATION_ERROR (-20001, 
+                        'Null values and empty strings are not allowed for zip code. Please re-enter.'); 
+                        
+            WHEN existing_email_e 
+                THEN  
+                    RAISE_APPLICATION_ERROR (-20002, 
+                        'This email address is already in use. Please log in to existing account or use another email.'); 
+                        
+            WHEN existing_contact_e 
+                THEN  
+                    RAISE_APPLICATION_ERROR (-20002, 
+                        'This contact number is already in use. Please log in to existing account or use another contact number.'); 
+                        
+            WHEN existing_username_e
+                THEN
+                    RAISE_APPLICATION_ERROR (-20002,
+                        'This username is already in use. Please log in to existing account or use another username.');
+                        
+            WHEN invalid_email_e
+                THEN
+                    RAISE_APPLICATION_ERROR(-20003,
+                        'Invalid email address was provided. Please re-enter.');
+                        
+            WHEN invalid_zipcode_e
+                THEN
+                    RAISE_APPLICATION_ERROR(-20003,
+                        'Invalid zip code was provided. Please re-enter.');
+            
+    END;
+END SIGN_UP_CUSTOMER;
+
+-- Procedure 9 ---------------------------------------------------------------------------------------------
+
+create or replace PROCEDURE SIGN_UP_OWNER 
+(
+  FIRST_NAME IN VARCHAR2 
+, LAST_NAME IN VARCHAR2 
+, EMAIL IN VARCHAR2 
+, CONTACT IN NUMBER 
+, USERNAME IN VARCHAR2 
+, PASSWRD IN VARCHAR2 
+, CITY IN VARCHAR2 
+, C_STATE IN VARCHAR2 
+, ZIP_CODE IN VARCHAR2 
+) AS 
+owner_id numeric;
+cur_date date;
+existing_email_flag numeric;
+existing_contact_flag numeric;
+existing_username_flag numeric;
+
+BEGIN
+    DECLARE
+        null_fname_e exception;
+        null_lname_e exception;
+        null_email_e exception;
+        existing_email_e exception;
+        invalid_email_e exception;
+        null_contact_e exception;
+        existing_contact_e exception;
+        null_username_e exception;
+        existing_username_e exception;
+        null_password_e exception;
+        null_city_e exception;
+        null_state_e exception;
+        null_zipcode_e exception;
+        invalid_zipcode_e exception;
+    BEGIN
+        select max(o_id)+1 into owner_id from owner;
+        select count(*) into existing_email_flag from owner where o_email=EMAIL;
+        select count(*) into existing_contact_flag from owner where o_contact=CONTACT;
+        select count(*) into existing_username_flag from owner where o_username=USERNAME;
+        
+        CASE
+            WHEN FIRST_NAME is null then raise null_fname_e;
+            WHEN LAST_NAME is null then raise null_lname_e;
+            WHEN EMAIL is null then raise null_email_e;
+            WHEN CONTACT is null then raise null_contact_e;
+            WHEN USERNAME is null then raise null_username_e;
+            WHEN PASSWRD is null then raise null_password_e;
+            WHEN CITY is null then raise null_city_e;
+            WHEN C_STATE is null then raise null_state_e;
+            WHEN ZIP_CODE is null then raise null_zipcode_e;
+            WHEN existing_email_flag!=0 then raise existing_email_e;
+            WHEN existing_contact_flag!=0 then raise existing_contact_e;
+            WHEN existing_username_flag!=0 then raise existing_username_e;
+            WHEN EMAIL not like ('%@%.%') then raise invalid_email_e;
+            WHEN length(ZIP_CODE)!=5 then raise invalid_zipcode_e;
+            WHEN not REGEXP_LIKE(ZIP_CODE, '^[[:digit:]]+$') then raise invalid_zipcode_e;
+            ELSE null;
+        END CASE;
+        
+        select sysdate into cur_date from dual;
+        insert into owner values(owner_id, first_name, last_name, email, contact, username, passwrd, city, c_state, zip_code, cur_date);
+        DBMS_OUTPUT.put_line('Owner added.');
+        
+        EXCEPTION 
+            WHEN null_fname_e 
+                THEN  
+                    RAISE_APPLICATION_ERROR (-20001, 
+                        'Null values and empty strings are not allowed for first name. Please re-enter.'); 
+         
+            WHEN null_lname_e 
+                THEN  
+                    RAISE_APPLICATION_ERROR (-20001, 
+                        'Null values and empty strings are not allowed for last name. Please re-enter.');  
+            
+            WHEN null_email_e 
+                THEN  
+                    RAISE_APPLICATION_ERROR (-20001, 
+                        'Null values and empty strings are not allowed for email. Please re-enter.'); 
+                        
+            WHEN null_contact_e 
+                THEN  
+                    RAISE_APPLICATION_ERROR (-20001, 
+                        'Null values and empty strings are not allowed for contact. Please re-enter.'); 
+                        
+            WHEN null_username_e 
+                THEN  
+                    RAISE_APPLICATION_ERROR (-20001, 
+                        'Null values and empty strings are not allowed for username. Please re-enter.'); 
+                        
+            WHEN null_password_e 
+                THEN  
+                    RAISE_APPLICATION_ERROR (-20001, 
+                        'Null values and empty strings are not allowed for password. Please re-enter.'); 
+                        
+            WHEN null_city_e 
+                THEN  
+                    RAISE_APPLICATION_ERROR (-20001, 
+                        'Null values and empty strings are not allowed for city. Please re-enter.'); 
+                        
+            WHEN null_state_e 
+                THEN  
+                    RAISE_APPLICATION_ERROR (-20001, 
+                        'Null values and empty strings are not allowed for state. Please re-enter.');
+                        
+            WHEN null_zipcode_e 
+                THEN  
+                    RAISE_APPLICATION_ERROR (-20001, 
+                        'Null values and empty strings are not allowed for zip code. Please re-enter.'); 
+                        
+            WHEN existing_email_e 
+                THEN  
+                    RAISE_APPLICATION_ERROR (-20002, 
+                        'This email address is already in use. Please log in to existing account or use another email.'); 
+                        
+            WHEN existing_contact_e 
+                THEN  
+                    RAISE_APPLICATION_ERROR (-20002, 
+                        'This contact number is already in use. Please log in to existing account or use another contact number.'); 
+                        
+            WHEN existing_username_e
+                THEN
+                    RAISE_APPLICATION_ERROR (-20002,
+                        'This username is already in use. Please log in to existing account or use another username.');
+                        
+            WHEN invalid_email_e
+                THEN
+                    RAISE_APPLICATION_ERROR(-20003,
+                        'Invalid email address was provided. Please re-enter.');
+                        
+            WHEN invalid_zipcode_e
+                THEN
+                    RAISE_APPLICATION_ERROR(-20003,
+                        'Invalid zip code was provided. Please re-enter.');
+            
+    END;
+END SIGN_UP_OWNER;
+
+-- Procedure 10 --------------------------------------------------------------------------------------------
+
+create or replace PROCEDURE UPDATE_RENTAL_COMPLAINT_STATUS 
+( comp_id in numeric, status IN VARCHAR2
+) AS 
+BEGIN
+    declare
+        status_e exception;
+        complaintid numeric;
+        complaintid_e exception;
+    begin
+        select count(*) into complaintid from rental_complaint where complaint_id = comp_id;
+        case
+            when status is null then raise status_e;
+            when complaintid is null then raise complaintid_e;
+            else null;
+        end case;
+        update rental_complaint set complaint_status = status where complaint_id = comp_id;
+    exception
+        when status_e then RAISE_APPLICATION_ERROR (-20018, 'Please enter valid status information.');
+        when complaintid_e then RAISE_APPLICATION_ERROR (-20019, 'Please enter valid complaint id.');
+    end;
+END UPDATE_RENTAL_COMPLAINT_STATUS;
+
+-- Procedure 11 --------------------------------------------------------------------------------------------
+
+create or replace PROCEDURE WRITE_CREDIT_CARD_DETAILS 
+(
+  CARDNUMBER IN NUMBER 
+, CID IN NUMBER 
+, CVV IN NUMBER 
+, c_NAME IN VARCHAR2 
+, c_TYPE IN VARCHAR2 
+, EXPIRY IN VARCHAR2 
+) AS 
+BEGIN
+  declare
+    cid_e exception;
+    cnumber_e exception;
+    cvv_e exception;
+    name_e exception;
+    type_e exception;
+    expiry_e exception;
+    cid_flag numeric;
+  begin
+    select count(*) into cid_flag from customer where c_id = cid;
+    case
+        when cid_flag is null then raise cid_e;
+        when cid is null then raise cid_e;
+        when cardnumber is null then raise cnumber_e;
+        when cardnumber<1000000000000000 then raise cnumber_e;
+        when cardnumber>9999999999999999 then raise cnumber_e;
+        when cvv is null then raise cvv_e;
+        when cvv<100 then raise cvv_e;
+        when cvv>999 then raise cvv_e;
+        when c_type is null then raise type_e;
+        when lower(c_type)!='credit' and lower(c_type)!='debit' then raise type_e;
+        when expiry is null then raise expiry_e;
+        when expiry not like '__/2_' then raise expiry_e;
+        else null;
+    end case;
+    insert into customer_card_details values (cardnumber, cid, c_name, c_type, expiry, cvv);
+  exception
+    when cid_e then RAISE_APPLICATION_ERROR (-20007, 'Please enter valid customer id.');
+    when cnumber_e then RAISE_APPLICATION_ERROR (-20008, 'Please enter valid card number.');
+    when cvv_e then RAISE_APPLICATION_ERROR (-20009, 'Please enter valid cvv number.');
+    when type_e then RAISE_APPLICATION_ERROR (-20010, 'Please enter valid card type from "credit" or "debit".');
+    when expiry_e then RAISE_APPLICATION_ERROR (-20011, 'Please enter valid expiry date in mm/yy format.');
+  end;
+END WRITE_CREDIT_CARD_DETAILS;
+
+-- Procedure 12 --------------------------------------------------------------------------------------------
+
+create or replace PROCEDURE WRITE_RENTAL_BOOKING_BACKLOG 
+(
+  RID IN NUMBER 
+, CID IN NUMBER 
+, B_START IN DATE 
+, B_END IN DATE
+) AS 
+BEGIN
+    DECLARE
+        rid_e exception;
+        cid_e exception;
+        bstart_e exception;
+        bend_e exception;
+        rid_flag numeric;
+        cid_flag numeric;
+        bid numeric;
+    BEGIN
+        select count(*) into rid_flag from rental_posting where r_id = rid;
+        select count(*) into cid_flag from customer where c_id = cid;
+        select max(b_id)+1 into bid from rental_booking_backlog;
+        CASE
+            WHEN rid is null then raise rid_e;
+            WHEN cid is null then raise cid_e;
+            WHEN b_start is null then raise bstart_e;
+            WHEN b_end is null then raise bend_e;
+            WHEN rid_flag is null then raise rid_e;
+            WHEN cid_flag is null then raise cid_e;
+            ELSE null;
+        END CASE;
+        insert into rental_booking_backlog values(bid, rid, cid, b_start, b_end, 1);
+    EXCEPTION
+        WHEN rid_e THEN
+                    RAISE_APPLICATION_ERROR (-20005, 'Please enter valid rental id.');
+        WHEN cid_e THEN
+                    RAISE_APPLICATION_ERROR (-20005, 'Please enter valid customer id.');
+        WHEN bstart_e THEN
+                    RAISE_APPLICATION_ERROR (-20005, 'Please enter valid start date.');
+        WHEN bend_e THEN
+                    RAISE_APPLICATION_ERROR (-20005, 'Please enter valid end date.');
+    END;
+END WRITE_RENTAL_BOOKING_BACKLOG;
+
+-- Procedure 13 --------------------------------------------------------------------------------------------
+
+create or replace PROCEDURE WRITE_RENTAL_COMPLAINT 
+(
+  RID IN NUMBER 
+, CID IN NUMBER 
+, COMPLAINTDESC IN VARCHAR2 
+, SEVERITY IN VARCHAR2 
+) AS 
+BEGIN
+    declare
+        rid_e exception;
+        cid_e exception;
+        complaintdesc_e exception;
+        severity_e exception;
+        complaintid numeric;
+        complaintdate date;
+        rid_flag numeric;
+        cid_flag numeric;
+    begin
+        select max(complaint_id)+1 into complaintid from rental_complaint;
+        select r_id into rid_flag from rental_posting where r_id = rid;
+        select c_id into cid_flag from customer where c_id = cid;
+        select sysdate into complaintdate from dual;
+        case
+            when rid is null then raise rid_e;
+            when cid is null then raise cid_e;
+            when complaintdesc is null then raise complaintdesc_e;
+            when severity is null then raise severity_e;
+            when rid_flag is null then raise rid_e;
+            when cid_flag is null then raise cid_e;
+            when lower(severity)!='low' and lower(severity)!='medium' and lower(severity)!='high' then raise severity_e;
+            else null;
+        end case;
+        insert into rental_complaint values(complaintid, rid, cid, complaintdate, 'created', complaintdesc, severity);
+    exception
+        when rid_e then RAISE_APPLICATION_ERROR (-20014, 'Please enter valid rental id.');
+        when cid_e then RAISE_APPLICATION_ERROR (-20015, 'Please enter valid customer id.');
+        when complaintdesc_e then RAISE_APPLICATION_ERROR (-20016, 'Please enter valid complaint description.');
+        when severity_e then RAISE_APPLICATION_ERROR (-20017, 'Please enter valid severity from "low", "medium", "high".');
+    end;
+END WRITE_RENTAL_COMPLAINT;
+
+-- Procedure 14 ---------------------------------------------------------------------------------------------
+
+create or replace PROCEDURE WRITE_RENTAL_FEEDBACK 
+(
+  BID IN NUMBER 
+, CID IN NUMBER 
+, REVIEW IN VARCHAR2 
+, RATING IN number 
+) AS 
+BEGIN
+    declare
+        bid_e exception;
+        cid_e exception;
+        review_e exception;
+        rating_e exception;
+        fb_id numeric;
+        fb_date date;
+        bid_flag numeric;
+        cid_flag numeric;
+    begin
+        select max(feedback_id)+1 into fb_id from rental_feedback;
+        select count(*) into bid_flag from rental_booking_backlog where b_id = bid;
+        select count(*) into cid_flag from customer where c_id = cid;
+        select sysdate into fb_date from dual;
+        case
+            when bid is null then raise bid_e;
+            when cid is null then raise cid_e;
+            when review is null then raise review_e;
+            when rating is null then raise rating_e;
+            when bid_flag is null then raise bid_e;
+            when cid_flag is null then raise cid_e;
+            when rating<0 or rating>5 then raise rating_e;
+            else null;
+        end case;
+        insert into rental_feedback values(fb_id, bid, cid, fb_date, review, rating);
+    exception
+        when bid_e then RAISE_APPLICATION_ERROR (-20020, 'Please enter valid booking id.');
+        when cid_e then RAISE_APPLICATION_ERROR (-20021, 'Please enter valid customer id.');
+        when review_e then RAISE_APPLICATION_ERROR (-20022, 'Please enter valid review.');
+        when rating_e then RAISE_APPLICATION_ERROR (-20023, 'Please enter valid rating, between 0 to 5.');
+    end;
+END WRITE_RENTAL_FEEDBACK;
+
+-- Procedure 15 -----------------------------------------------------------------------------------------------------
+create or replace PROCEDURE UPDATE_OWNER_DETAILS 
+(
+  USERNAME IN VARCHAR2
+, PASSWRD IN VARCHAR2
+, EMAIL IN VARCHAR2
+, CONTACT IN NUMERIC
+) AS 
+BEGIN
+    DECLARE
+        invalid_credentials exception;
+        invalid_email exception;
+        no_parameter exception;
+        username_flag numeric;
+        password_flag varchar2(30);
+    BEGIN
+        select count(*) into username_flag from owner where o_username = USERNAME;
+        select o_password into password_flag from owner where o_username = USERNAME;
+        CASE
+            WHEN username_flag is null then raise invalid_credentials;
+            WHEN password_flag!=PASSWRD then raise invalid_credentials;
+            WHEN (CONTACT is null and EMAIL is null) then raise no_parameter;
+            WHEN (EMAIL is not null and EMAIL not like '%@%.%') then raise invalid_email;
+            WHEN (EMAIL is not null and CONTACT is not null) then execute immediate 'update owner set o_email = '''||EMAIL||''', o_contact = '||CONTACT||' where o_username = '''||USERNAME||'''';
+            WHEN EMAIL is null then execute immediate 'update owner set o_contact = '||CONTACT||' where o_username = '''||USERNAME||'''';
+            WHEN CONTACT is null then execute immediate 'update owner set o_email = '''||EMAIL||''' where o_username = '''||USERNAME||'''';
+            ELSE null;
+        END CASE;
+
+        EXCEPTION
+            WHEN invalid_credentials 
+                THEN
+                    RAISE_APPLICATION_ERROR (-20004, 
+                        'Please re-enter credentials. Invalid username or password provided.');
+            WHEN no_parameter
+                THEN
+                    RAISE_APPLICATION_ERROR(-20005,
+                        'No email or contact number provided for update. Please re-enter information');
+            WHEN invalid_email
+                THEN
+                    RAISE_APPLICATION_ERROR(-20006,
+                        'Invalid email address provided. Please re-enter');
+    END;
+END UPDATE_OWNER_DETAILS;
